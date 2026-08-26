@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能报价器 · 成本利润分析</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="container">
+    <header class="page-header">
+        <div>
+            <h1>📊 智能报价器</h1>
+            <p>产品报价 · 成本利润分析</p>
+        </div>
+        <div class="header-actions">
+            <button id="adminBtn" type="button">⚙️ 商品后台</button>
+            <button id="clearCartBtn" class="secondary-btn" type="button">清空购物车</button>
+        </div>
+    </header>
+
+    <section class="search-box" aria-label="产品搜索">
+        <input id="searchInput" type="search" placeholder="输入产品名称、缩写或规格搜索">
+        <button id="searchBtn" type="button">搜索</button>
+    </section>
+
+    <section id="adminPanel" class="admin-panel" hidden>
+        <div class="admin-heading">
+            <div><h2>⚙️ 商品管理后台</h2><p>添加、修改或删除商品；保存后报价目录立即更新。</p></div>
+            <button id="closeAdminBtn" class="secondary-btn" type="button">关闭后台</button>
+        </div>
+        <form id="productForm" class="product-form">
+            <input id="editProductId" type="hidden">
+            <label>商品缩写<input id="adminCode" required placeholder="例如 SM5"></label>
+            <label>商品名称<input id="adminName" required placeholder="例如 Semaglutide"></label>
+            <label>规格<input id="adminSpec" required placeholder="例如 5mg*10vials"></label>
+            <label>销售金额（USD）<input id="adminPrice" required type="number" min="0" step="0.01"></label>
+            <label>成本金额（CNY）<input id="adminCost" required type="number" min="0" step="0.01"></label>
+            <div class="form-actions">
+                <button type="submit">保存商品</button>
+                <button id="cancelEditBtn" class="secondary-btn" type="button">取消编辑</button>
+            </div>
+        </form>
+        <div class="admin-toolbar">
+            <input id="adminSearch" type="search" placeholder="搜索缩写、名称或规格">
+            <span id="adminProductCount"></span>
+            <button id="restoreProductsBtn" class="danger-btn" type="button">恢复默认商品</button>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead><tr><th>缩写</th><th>名称</th><th>规格</th><th>售价 USD</th><th>成本 CNY</th><th>操作</th></tr></thead>
+                <tbody id="adminProductList"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h2>📦 产品目录</h2>
+        <div id="productList"></div>
+    </section>
+
+    <section class="cart-section">
+        <h2>🛒 报价购物车</h2>
+        <div id="cartList"></div>
+
+        <div class="pricing-controls">
+            <label>折扣 (%)
+                <input id="discountPercent" type="number" min="0" max="100" step="0.1" value="0">
+            </label>
+            <label class="checkbox-label">自动运费
+                <input id="autoShipping" type="checkbox" checked>
+            </label>
+            <label>运费 ($)
+                <input id="shippingFee" type="number" min="0" step="0.01" value="55" disabled>
+            </label>
+            <label>物流保险 (%)
+                <input id="insurancePercent" type="number" min="0" max="100" step="0.1" value="5">
+            </label>
+            <label>手续费扣除 (%)
+                <input id="feePercent" type="number" min="0" max="100" step="0.1" value="0">
+            </label>
+        </div>
+
+        <div class="summary" aria-live="polite">
+            <div><span>商品小计</span><strong id="subtotalPrice">$0.00</strong></div>
+            <div><span>折扣金额</span><strong id="discountAmount">-$0.00</strong></div>
+            <div><span>折后商品额</span><strong id="discountedSubtotal">$0.00</strong></div>
+            <div><span>运费</span><strong id="shippingAmount">$0.00</strong></div>
+            <div><span>物流保险</span><strong id="insuranceAmount">$0.00</strong></div>
+            <div class="final-row"><span>最终报价</span><strong id="totalPrice">$0.00</strong></div>
+            <div class="internal-row"><span>成本合计</span><strong id="totalCost">¥0.00</strong></div>
+            <div class="internal-row"><span>手续费扣除</span><strong id="feeAmount">-$0.00</strong></div>
+            <div class="profit-row"><span>净利润</span><strong id="totalProfit">$0.00</strong></div>
+        </div>
+        <p class="formula-note">利润按汇率 1 USD = 6.8 CNY 计算；运费视为代收代付，不计入利润。</p>
+    </section>
+
+    <section class="quotation-section">
+        <div class="quotation-heading">
+            <div><h2>📄 Official Quotation</h2><p>Customer quotation · USD</p></div>
+            <button id="printQuoteBtn" type="button">打印 / 保存 PDF</button>
+        </div>
+        <div id="quoteContent"></div>
+    </section>
+</main>
+
+<script src="products.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
