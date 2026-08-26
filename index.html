@@ -29,6 +29,21 @@
             <div><h2>⚙️ 商品管理后台</h2><p>添加、修改或删除商品；保存后报价目录立即更新。</p></div>
             <button id="closeAdminBtn" class="secondary-btn" type="button">关闭后台</button>
         </div>
+        <div id="adminLogin" class="admin-login">
+            <h3>管理员登录</h3>
+            <p>只有管理员账号可以修改云端商品。第一次使用请先创建账号，并在邮箱中确认。</p>
+            <form id="loginForm">
+                <label>管理员邮箱<input id="loginEmail" type="email" required value="xxixi6806@gmail.com"></label>
+                <label>密码<input id="loginPassword" type="password" required minlength="6" autocomplete="current-password"></label>
+                <div class="form-actions">
+                    <button type="submit">登录后台</button>
+                    <button id="signUpBtn" class="secondary-btn" type="button">首次创建管理员账号</button>
+                </div>
+            </form>
+            <p id="authMessage" class="auth-message" aria-live="polite"></p>
+        </div>
+        <div id="adminContent" hidden>
+            <div class="admin-session"><span id="adminIdentity"></span><button id="logoutBtn" class="secondary-btn" type="button">退出登录</button></div>
         <form id="productForm" class="product-form">
             <input id="editProductId" type="hidden">
             <label>商品缩写<input id="adminCode" required placeholder="例如 SM5"></label>
@@ -51,6 +66,7 @@
                 <thead><tr><th>缩写</th><th>名称</th><th>规格</th><th>售价 USD</th><th>成本 CNY</th><th>操作</th></tr></thead>
                 <tbody id="adminProductList"></tbody>
             </table>
+        </div>
         </div>
     </section>
 
@@ -88,9 +104,9 @@
             <div><span>运费</span><strong id="shippingAmount">$0.00</strong></div>
             <div><span>物流保险</span><strong id="insuranceAmount">$0.00</strong></div>
             <div class="final-row"><span>最终报价</span><strong id="totalPrice">$0.00</strong></div>
-            <div class="internal-row"><span>成本合计</span><strong id="totalCost">¥0.00</strong></div>
-            <div class="internal-row"><span>手续费扣除</span><strong id="feeAmount">-$0.00</strong></div>
-            <div class="profit-row"><span>净利润</span><strong id="totalProfit">$0.00</strong></div>
+            <div class="internal-row admin-only" hidden><span>成本合计</span><strong id="totalCost">¥0.00</strong></div>
+            <div class="internal-row admin-only" hidden><span>手续费扣除</span><strong id="feeAmount">-$0.00</strong></div>
+            <div class="profit-row admin-only" hidden><span>净利润</span><strong id="totalProfit">$0.00</strong></div>
         </div>
         <p class="formula-note">利润按汇率 1 USD = 6.8 CNY 计算；运费视为代收代付，不计入利润。</p>
     </section>
@@ -104,6 +120,7 @@
     </section>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="products.js"></script>
 <script src="app.js"></script>
 </body>
