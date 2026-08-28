@@ -25,9 +25,11 @@ const toDisplayCurrency = valueUsd => Number(valueUsd || 0) * currencyInfo[curre
 const fromDisplayCurrency = value => Number(value || 0) / currencyInfo[currentCurrency].rate;
 const roundCurrency = value => Math.round((Number(value || 0) + 1e-9) * 100) / 100;
 const money = valueUsd => currencyInfo[currentCurrency].symbol + roundCurrency(toDisplayCurrency(valueUsd)).toFixed(2);
-const truncateCurrency = value => Math.trunc(Number(value || 0));
+const truncateCurrency = value => Math.trunc(Number(value || 0) + 1e-9);
 const wholeMoney = valueUsd => currencyInfo[currentCurrency].symbol + truncateCurrency(toDisplayCurrency(valueUsd));
 const truncateDisplayedUsd = valueUsd => fromDisplayCurrency(truncateCurrency(toDisplayCurrency(valueUsd)));
+const quotedProductPriceUsd = valueUsd => currentCurrency === "AUD" ? truncateDisplayedUsd(valueUsd) : Number(valueUsd || 0);
+const productMoney = valueUsd => wholeMoney(quotedProductPriceUsd(valueUsd));
 const usdMoney = value => "$" + Number(value || 0).toFixed(2);
 const cny = value => "¥" + Number(value || 0).toFixed(2);
 const clampPercent = input => {
@@ -103,7 +105,7 @@ function renderProducts(keyword = "") {
             const row = el("div", "product-spec"); const info = el("div", "product-spec__info");
             info.append(el("strong", "product-spec__code", product.code), el("span", "product-spec__size", product.spec));
             const add = el("button", "add-cart-btn", "加入报价"); add.type = "button"; add.onclick = () => addCart(product.id);
-            row.append(info, el("span", "product-spec__price", money(product.price)), add); body.append(row);
+            row.append(info, el("span", "product-spec__price", productMoney(product.price)), add); body.append(row);
         });
         header.onclick = () => { expandedGroups.has(name) ? expandedGroups.delete(name) : expandedGroups.add(name); renderProducts(searchInput.value); };
         group.append(header, body); productList.append(group);
@@ -123,7 +125,7 @@ function automaticShipping(quantity) {
     return 105 + Math.ceil((quantity - 30) / 10) * 25;
 }
 function calculate() {
-    const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const subtotal = cart.reduce((sum, item) => sum + quotedProductPriceUsd(item.price) * item.quantity, 0);
     const costCny = cart.reduce((sum, item) => sum + item.cost * item.quantity, 0);
     const quantity = cart.reduce((sum, item) => sum + item.quantity, 0);
     const discountRate = clampPercent(controls.discount), insuranceRate = clampPercent(controls.insurance), feeRate = PROCESSING_FEE_RATE;
@@ -146,18 +148,19 @@ function renderCart() {
     if (!cart.length) cartList.append(el("p", "empty-state", "还没有加入商品"));
     cart.forEach(item => {
         const row = el("div", "cart-item"), info = el("div", "cart-item__info");
-        const detail = `${item.code} · ${item.spec} · ${money(item.price)}` + (isAdmin ? ` · 成本 ${cny(item.cost)}` : "");
+        const quotedUnitPrice = quotedProductPriceUsd(item.price);
+        const detail = `${item.code} · ${item.spec} · ${wholeMoney(quotedUnitPrice)}` + (isAdmin ? ` · 成本 ${cny(item.cost)}` : "");
         info.append(el("strong", "", item.name), el("span", "", detail));
         const qty = el("div", "qty-control"), minus = el("button", "qty-btn", "−"), plus = el("button", "qty-btn", "+");
         minus.type = plus.type = "button"; minus.onclick = () => changeQty(item.id, -1); plus.onclick = () => changeQty(item.id, 1);
         qty.append(minus, el("span", "qty-value", item.quantity), plus);
-        row.append(info, qty, el("strong", "cart-item__subtotal", money(item.price * item.quantity))); cartList.append(row);
+        row.append(info, qty, el("strong", "cart-item__subtotal", wholeMoney(quotedUnitPrice * item.quantity))); cartList.append(row);
     });
     renderTotals();
 }
 function renderTotals() {
     const v = calculate();
-    $("subtotalPrice").textContent = money(v.subtotal); $("discountAmount").textContent = "-" + money(v.discount);
+    $("subtotalPrice").textContent = wholeMoney(v.subtotal); $("discountAmount").textContent = "-" + money(v.discount);
     $("discountedSubtotal").textContent = money(v.afterDiscount); $("shippingAmount").textContent = wholeMoney(v.shipping);
     $("insuranceAmount").textContent = wholeMoney(v.insurance); $("totalPrice").textContent = money(v.total);
     $("totalCost").textContent = cny(v.costCny); $("feeAmount").textContent = "-" + money(v.processingFee); $("totalProfit").textContent = money(v.profit);
@@ -167,8 +170,8 @@ function renderTotals() {
 function renderQuotation(v) {
     const wrap = $("quoteContent"); if (!cart.length) { wrap.innerHTML = '<p class="empty-state">Add products to generate an official quotation.</p>'; return; }
     const table = el("table", "quote-table"), head = el("thead"); head.innerHTML = "<tr><th>Product</th><th>Specification</th><th>Unit Price</th><th>Quantity</th><th>Subtotal</th></tr>"; table.append(head);
-    const body = el("tbody"); cart.forEach(item => { const row = el("tr"); [item.code + " " + item.name, item.spec, money(item.price), `${item.quantity} box`, money(item.price * item.quantity)].forEach(text => row.append(el("td", "", text))); body.append(row); }); table.append(body);
-    const summary = el("table", "quote-summary"), rows = [["Products Subtotal", money(v.subtotal)]];
+    const body = el("tbody"); cart.forEach(item => { const row = el("tr"); const quotedUnitPrice = quotedProductPriceUsd(item.price); [item.code + " " + item.name, item.spec, wholeMoney(quotedUnitPrice), `${item.quantity} box`, wholeMoney(quotedUnitPrice * item.quantity)].forEach(text => row.append(el("td", "", text))); body.append(row); }); table.append(body);
+    const summary = el("table", "quote-summary"), rows = [["Products Subtotal", wholeMoney(v.subtotal)]];
     if (v.discountRate) rows.push([`Discount (${v.discountRate}%)`, "-" + money(v.discount)], ["After Discount", money(v.afterDiscount)]);
     rows.push(["Shipping Fee", wholeMoney(v.shipping)], [`Insurance (${v.insuranceRate}%)`, wholeMoney(v.insurance)], ["FINAL TOTAL", money(v.total)]);
     rows.forEach(([label, value], index) => { const row = el("tr", index === rows.length - 1 ? "quote-total" : ""); row.append(el("td", "", label), el("td", "", value)); summary.append(row); }); wrap.replaceChildren(table, summary);
