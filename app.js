@@ -11,7 +11,7 @@ const controls = {
     insurance: $("insurancePercent"), fee: $("feePercent")
 };
 
-const CNY_PER_USD = 6.8;
+const CNY_PER_USD = 6.7;
 const AUD_PER_USD = 1.43;
 const PROCESSING_FEE_RATE = 10;
 let currentCurrency = "USD";
@@ -25,6 +25,9 @@ const toDisplayCurrency = valueUsd => Number(valueUsd || 0) * currencyInfo[curre
 const fromDisplayCurrency = value => Number(value || 0) / currencyInfo[currentCurrency].rate;
 const roundCurrency = value => Math.round((Number(value || 0) + 1e-9) * 100) / 100;
 const money = valueUsd => currencyInfo[currentCurrency].symbol + roundCurrency(toDisplayCurrency(valueUsd)).toFixed(2);
+const truncateCurrency = value => Math.trunc(Number(value || 0));
+const wholeMoney = valueUsd => currencyInfo[currentCurrency].symbol + truncateCurrency(toDisplayCurrency(valueUsd));
+const truncateDisplayedUsd = valueUsd => fromDisplayCurrency(truncateCurrency(toDisplayCurrency(valueUsd)));
 const usdMoney = value => "$" + Number(value || 0).toFixed(2);
 const cny = value => "¥" + Number(value || 0).toFixed(2);
 const clampPercent = input => {
@@ -124,11 +127,14 @@ function calculate() {
     const costCny = cart.reduce((sum, item) => sum + item.cost * item.quantity, 0);
     const quantity = cart.reduce((sum, item) => sum + item.quantity, 0);
     const discountRate = clampPercent(controls.discount), insuranceRate = clampPercent(controls.insurance), feeRate = PROCESSING_FEE_RATE;
-    if (controls.autoShipping.checked) controls.shipping.value = toDisplayCurrency(automaticShipping(quantity)).toFixed(2);
+    if (controls.autoShipping.checked) controls.shipping.value = truncateCurrency(toDisplayCurrency(automaticShipping(quantity)));
     controls.shipping.disabled = controls.autoShipping.checked;
-    const shipping = Math.max(0, fromDisplayCurrency(controls.shipping.value));
+    const shippingDisplay = Math.max(0, truncateCurrency(controls.shipping.value));
+    if (Number(controls.shipping.value) !== shippingDisplay) controls.shipping.value = shippingDisplay;
+    const shipping = fromDisplayCurrency(shippingDisplay);
     const discount = subtotal * discountRate / 100, afterDiscount = subtotal - discount;
-    const insurance = (afterDiscount + shipping) * insuranceRate / 100, total = afterDiscount + shipping + insurance;
+    const insurance = truncateDisplayedUsd((afterDiscount + shipping) * insuranceRate / 100);
+    const total = afterDiscount + shipping + insurance;
     const processingFee = total * PROCESSING_FEE_RATE / 100;
     const costUsd = costCny / CNY_PER_USD;
     const profit = total - costUsd - shipping - processingFee;
@@ -152,8 +158,8 @@ function renderCart() {
 function renderTotals() {
     const v = calculate();
     $("subtotalPrice").textContent = money(v.subtotal); $("discountAmount").textContent = "-" + money(v.discount);
-    $("discountedSubtotal").textContent = money(v.afterDiscount); $("shippingAmount").textContent = money(v.shipping);
-    $("insuranceAmount").textContent = money(v.insurance); $("totalPrice").textContent = money(v.total);
+    $("discountedSubtotal").textContent = money(v.afterDiscount); $("shippingAmount").textContent = wholeMoney(v.shipping);
+    $("insuranceAmount").textContent = wholeMoney(v.insurance); $("totalPrice").textContent = money(v.total);
     $("totalCost").textContent = cny(v.costCny); $("feeAmount").textContent = "-" + money(v.processingFee); $("totalProfit").textContent = money(v.profit);
     document.querySelectorAll(".admin-only").forEach(node => node.hidden = !isAdmin);
     renderQuotation(v);
@@ -164,7 +170,7 @@ function renderQuotation(v) {
     const body = el("tbody"); cart.forEach(item => { const row = el("tr"); [item.code + " " + item.name, item.spec, money(item.price), `${item.quantity} box`, money(item.price * item.quantity)].forEach(text => row.append(el("td", "", text))); body.append(row); }); table.append(body);
     const summary = el("table", "quote-summary"), rows = [["Products Subtotal", money(v.subtotal)]];
     if (v.discountRate) rows.push([`Discount (${v.discountRate}%)`, "-" + money(v.discount)], ["After Discount", money(v.afterDiscount)]);
-    rows.push(["Shipping Fee", money(v.shipping)], [`Insurance (${v.insuranceRate}%)`, money(v.insurance)], ["FINAL TOTAL", money(v.total)]);
+    rows.push(["Shipping Fee", wholeMoney(v.shipping)], [`Insurance (${v.insuranceRate}%)`, wholeMoney(v.insurance)], ["FINAL TOTAL", money(v.total)]);
     rows.forEach(([label, value], index) => { const row = el("tr", index === rows.length - 1 ? "quote-total" : ""); row.append(el("td", "", label), el("td", "", value)); summary.append(row); }); wrap.replaceChildren(table, summary);
 }
 
@@ -172,7 +178,7 @@ function setCurrency(currency) {
     if (!currencyInfo[currency] || currency === currentCurrency) return;
     const shippingUsd = fromDisplayCurrency(controls.shipping.value);
     currentCurrency = currency;
-    if (!controls.autoShipping.checked) controls.shipping.value = toDisplayCurrency(shippingUsd).toFixed(2);
+    if (!controls.autoShipping.checked) controls.shipping.value = truncateCurrency(toDisplayCurrency(shippingUsd));
     $("currencyUSD").classList.toggle("is-active", currency === "USD");
     $("currencyAUD").classList.toggle("is-active", currency === "AUD");
     $("currencyUSD").setAttribute("aria-pressed", String(currency === "USD"));
