@@ -22,7 +22,8 @@ const expandedGroups = new Set();
 const currencyInfo = { USD: { symbol: "$", rate: 1 }, AUD: { symbol: "A$", rate: AUD_PER_USD } };
 const toDisplayCurrency = valueUsd => Number(valueUsd || 0) * currencyInfo[currentCurrency].rate;
 const fromDisplayCurrency = value => Number(value || 0) / currencyInfo[currentCurrency].rate;
-const money = valueUsd => currencyInfo[currentCurrency].symbol + toDisplayCurrency(valueUsd).toFixed(2);
+const roundCurrency = value => Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+const money = valueUsd => currencyInfo[currentCurrency].symbol + roundCurrency(toDisplayCurrency(valueUsd)).toFixed(2);
 const usdMoney = value => "$" + Number(value || 0).toFixed(2);
 const cny = value => "¥" + Number(value || 0).toFixed(2);
 const clampPercent = input => {
