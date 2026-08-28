@@ -12,12 +12,18 @@ const controls = {
 };
 
 const CNY_PER_USD = 6.8;
+const AUD_PER_USD = 1.55;
+let currentCurrency = "USD";
 let cart = [];
 let isAdmin = false;
 let groups = new Map();
 const expandedGroups = new Set();
 
-const money = value => "$" + Number(value || 0).toFixed(2);
+const currencyInfo = { USD: { symbol: "$", rate: 1 }, AUD: { symbol: "A$", rate: AUD_PER_USD } };
+const toDisplayCurrency = valueUsd => Number(valueUsd || 0) * currencyInfo[currentCurrency].rate;
+const fromDisplayCurrency = value => Number(value || 0) / currencyInfo[currentCurrency].rate;
+const money = valueUsd => currencyInfo[currentCurrency].symbol + toDisplayCurrency(valueUsd).toFixed(2);
+const usdMoney = value => "$" + Number(value || 0).toFixed(2);
 const cny = value => "¥" + Number(value || 0).toFixed(2);
 const clampPercent = input => {
     const value = Math.max(0, Math.min(100, Number(input.value) || 0));
@@ -116,9 +122,9 @@ function calculate() {
     const costCny = cart.reduce((sum, item) => sum + item.cost * item.quantity, 0);
     const quantity = cart.reduce((sum, item) => sum + item.quantity, 0);
     const discountRate = clampPercent(controls.discount), insuranceRate = clampPercent(controls.insurance), feeRate = clampPercent(controls.fee);
-    if (controls.autoShipping.checked) controls.shipping.value = automaticShipping(quantity).toFixed(2);
+    if (controls.autoShipping.checked) controls.shipping.value = toDisplayCurrency(automaticShipping(quantity)).toFixed(2);
     controls.shipping.disabled = controls.autoShipping.checked;
-    const shipping = Math.max(0, Number(controls.shipping.value) || 0);
+    const shipping = Math.max(0, fromDisplayCurrency(controls.shipping.value));
     const discount = subtotal * discountRate / 100, afterDiscount = subtotal - discount;
     const insurance = (afterDiscount + shipping) * insuranceRate / 100, total = afterDiscount + shipping + insurance;
     const processingFee = total * feeRate / 100, profit = total - shipping - processingFee - costCny / CNY_PER_USD;
@@ -158,6 +164,22 @@ function renderQuotation(v) {
     rows.forEach(([label, value], index) => { const row = el("tr", index === rows.length - 1 ? "quote-total" : ""); row.append(el("td", "", label), el("td", "", value)); summary.append(row); }); wrap.replaceChildren(table, summary);
 }
 
+function setCurrency(currency) {
+    if (!currencyInfo[currency] || currency === currentCurrency) return;
+    const shippingUsd = fromDisplayCurrency(controls.shipping.value);
+    currentCurrency = currency;
+    if (!controls.autoShipping.checked) controls.shipping.value = toDisplayCurrency(shippingUsd).toFixed(2);
+    $("currencyUSD").classList.toggle("is-active", currency === "USD");
+    $("currencyAUD").classList.toggle("is-active", currency === "AUD");
+    $("currencyUSD").setAttribute("aria-pressed", String(currency === "USD"));
+    $("currencyAUD").setAttribute("aria-pressed", String(currency === "AUD"));
+    $("shippingCurrencyLabel").textContent = currency;
+    $("quoteCurrency").textContent = currency;
+    $("currencyRateText").textContent = currency === "USD" ? `1 USD = ${AUD_PER_USD.toFixed(2)} AUD` : `1 AUD = ${(1 / AUD_PER_USD).toFixed(4)} USD`;
+    renderProducts(searchInput.value);
+    renderCart();
+}
+
 function resetProductForm() { $("productForm").reset(); $("editProductId").value = ""; }
 function showAdminState(email) {
     $("adminLogin").hidden = true; $("adminContent").hidden = false; $("adminIdentity").textContent = `已登录：${email}`;
@@ -178,7 +200,7 @@ function renderAdminProducts() {
     $("adminProductCount").textContent = `显示 ${list.length} / ${products.length} 件商品`;
     const body = $("adminProductList"); body.replaceChildren();
     list.forEach(product => {
-        const row = el("tr"); [product.code, product.name, product.spec, money(product.price), cny(product.cost)].forEach(value => row.append(el("td", "", value)));
+        const row = el("tr"); [product.code, product.name, product.spec, usdMoney(product.price), cny(product.cost)].forEach(value => row.append(el("td", "", value)));
         const cell = el("td"), actions = el("div", "admin-actions"), edit = el("button", "", "修改"), remove = el("button", "delete-product-btn", "删除");
         edit.type = remove.type = "button"; edit.onclick = () => editProduct(product.id); remove.onclick = () => deleteProduct(product.id); actions.append(edit, remove); cell.append(actions); row.append(cell); body.append(row);
     });
@@ -228,6 +250,8 @@ function search() { renderProducts(searchInput.value); }
 $("searchBtn").onclick = search; searchInput.oninput = search; searchInput.onkeydown = event => { if (event.key === "Enter") search(); };
 Object.values(controls).forEach(input => { input.addEventListener("input", renderTotals); input.addEventListener("change", renderTotals); });
 $("clearCartBtn").onclick = () => { cart = []; renderCart(); }; $("printQuoteBtn").onclick = () => window.print();
+$("currencyUSD").onclick = () => setCurrency("USD");
+$("currencyAUD").onclick = () => setCurrency("AUD");
 
 async function init() {
     rebuildGroups(); renderProducts(); renderCart();

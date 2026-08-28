@@ -8,6 +8,13 @@
 </head>
 <body>
 <main class="container">
+    <div class="currency-bar" aria-label="报价币种切换">
+        <div><strong>报价币种</strong><span id="currencyRateText">1 USD = 1.55 AUD</span></div>
+        <div class="currency-switch" role="group" aria-label="选择报价币种">
+            <button id="currencyUSD" class="currency-btn is-active" type="button" aria-pressed="true">USD 美元</button>
+            <button id="currencyAUD" class="currency-btn" type="button" aria-pressed="false">AUD 澳元</button>
+        </div>
+    </div>
     <header class="page-header">
         <div>
             <h1>📊 智能报价器</h1>
@@ -86,7 +93,7 @@
             <label class="checkbox-label">自动运费
                 <input id="autoShipping" type="checkbox" checked>
             </label>
-            <label>运费 ($)
+            <label>运费（<span id="shippingCurrencyLabel">USD</span>）
                 <input id="shippingFee" type="number" min="0" step="0.01" value="55" disabled>
             </label>
             <label>物流保险 (%)
@@ -113,7 +120,7 @@
 
     <section class="quotation-section">
         <div class="quotation-heading">
-            <div><h2>📄 Official Quotation</h2><p>Customer quotation · USD</p></div>
+            <div><h2>📄 Official Quotation</h2><p>Customer quotation · <span id="quoteCurrency">USD</span></p></div>
             <button id="printQuoteBtn" type="button">打印 / 保存 PDF</button>
         </div>
         <div id="quoteContent"></div>
