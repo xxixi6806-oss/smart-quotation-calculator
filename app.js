@@ -13,6 +13,7 @@ const controls = {
 
 const CNY_PER_USD = 6.8;
 const AUD_PER_USD = 1.43;
+const PROCESSING_FEE_RATE = 10;
 let currentCurrency = "USD";
 let cart = [];
 let isAdmin = false;
@@ -122,13 +123,15 @@ function calculate() {
     const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const costCny = cart.reduce((sum, item) => sum + item.cost * item.quantity, 0);
     const quantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-    const discountRate = clampPercent(controls.discount), insuranceRate = clampPercent(controls.insurance), feeRate = clampPercent(controls.fee);
+    const discountRate = clampPercent(controls.discount), insuranceRate = clampPercent(controls.insurance), feeRate = PROCESSING_FEE_RATE;
     if (controls.autoShipping.checked) controls.shipping.value = toDisplayCurrency(automaticShipping(quantity)).toFixed(2);
     controls.shipping.disabled = controls.autoShipping.checked;
     const shipping = Math.max(0, fromDisplayCurrency(controls.shipping.value));
     const discount = subtotal * discountRate / 100, afterDiscount = subtotal - discount;
     const insurance = (afterDiscount + shipping) * insuranceRate / 100, total = afterDiscount + shipping + insurance;
-    const processingFee = total * feeRate / 100, profit = total - shipping - processingFee - costCny / CNY_PER_USD;
+    const processingFee = total * PROCESSING_FEE_RATE / 100;
+    const costUsd = costCny / CNY_PER_USD;
+    const profit = total - costUsd - shipping - processingFee;
     return { subtotal, costCny, discountRate, discount, afterDiscount, shipping, insuranceRate, insurance, processingFee, total, profit };
 }
 

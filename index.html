@@ -99,8 +99,8 @@
             <label>物流保险 (%)
                 <input id="insurancePercent" type="number" min="0" max="100" step="0.1" value="5">
             </label>
-            <label>手续费扣除 (%)
-                <input id="feePercent" type="number" min="0" max="100" step="0.1" value="0">
+            <label>手续费扣除（最终报价的 10%）
+                <input id="feePercent" type="number" value="10" disabled>
             </label>
         </div>
 
@@ -115,7 +115,7 @@
             <div class="internal-row admin-only" hidden><span>手续费扣除</span><strong id="feeAmount">-$0.00</strong></div>
             <div class="profit-row admin-only" hidden><span>净利润</span><strong id="totalProfit">$0.00</strong></div>
         </div>
-        <p class="formula-note">利润按汇率 1 USD = 6.8 CNY 计算；运费视为代收代付，不计入利润。</p>
+        <p class="formula-note">净利润 = 最终报价 − 成本合计 − 运费 − 手续费扣除；手续费固定为最终报价的 10%。成本按 1 USD = 6.8 CNY 换算。</p>
     </section>
 
     <section class="quotation-section">
