@@ -12,7 +12,7 @@ const controls = {
 };
 
 const CNY_PER_USD = 6.8;
-const AUD_PER_USD = 1.55;
+const AUD_PER_USD = 1.43;
 let currentCurrency = "USD";
 let cart = [];
 let isAdmin = false;
